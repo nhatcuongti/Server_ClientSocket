@@ -6,9 +6,11 @@ import java.net.Socket;
 public class Server_ClientSocket {
 
     Socket socket = null;
+    String pathData = "C:\\Users\\CSM\\IdeaProjects\\Server_ClientSocket\\src\\com\\company\\Data";
 
     public Server_ClientSocket(Socket s) {
         socket = s;
+        ReceivedProcess();
     }
 
     public void ReceivedProcess(){
@@ -20,7 +22,7 @@ public class Server_ClientSocket {
                     br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-                    File folderData = new File("Data");
+                    File folderData = new File(pathData);
 
 
                     while (true){
@@ -29,38 +31,59 @@ public class Server_ClientSocket {
                         if (requiredUser.equals("Watch List")){
                             for (File file : folderData.listFiles()){
                                 bw.write(file.getName());
+                                bw.newLine();
                                 bw.flush();
                             }
+                            bw.write("/End/");
+                            bw.newLine();
+                            bw.flush();
                         }
                         else if (requiredUser.equals("Download")){
-                            String fileName ="/Data/" + br.readLine();
-
-
-                            BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
+                            String fileName =pathData + "\\" + br.readLine();
 
                             File file = new File(fileName);
-                            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-                            byte[] buffer = new byte[1024];
-                            int bytesRead = 0;
-                            long fileSize = file.length();
-                            byte[] byteFileSize ;
+                            bw.write(String.valueOf(file.length()));
+                            bw.newLine();
+                            bw.flush();
 
-                            while ((bytesRead = bis.read(buffer, 0, 1024)) >= 0){
-                                bos.write(buffer, 0, bytesRead);
-                                bos.flush();
+                            BufferedReader brFile = new BufferedReader(new FileReader(file));
+                            String line = "";
+
+                            while ((line = brFile.readLine()) != null){
+                                bw.write(line);
+                                bw.newLine();
+                                bw.flush();
                             }
+
+                            brFile.close();
+
+                            bw.write("/End/");
+                            bw.newLine();
+                            bw.flush();
+
                         }
                         else{
                             String keywords = br.readLine();
                             for (File file : folderData.listFiles())
                                 if (file.getName().contains(keywords)){
                                     bw.write(file.getName());
+                                    bw.newLine();
                                     bw.flush();
                                 }
+
+                            bw.write("/End/");
+                            bw.newLine();
+                            bw.flush();
                         }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    try {
+                        if (socket != null)
+                            socket.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
 
             }
